@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import Boolean, Column, DateTime, ForeignKey, BigInteger, LargeBinary, String, Integer
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, BigInteger, LargeBinary, String, Integer, DECIMAL
 from sqlalchemy.orm import relationship
 
 from app.common.domain.database import Base
@@ -24,8 +24,8 @@ class User(BaseEntity):
     username = Column(String, unique=True, nullable=False, index=True)
     email = Column(String, unique=True, nullable=True, index=True)
     phone_number = Column(String, unique=True, nullable=True, index=True)
-    password_hash = Column(LargeBinary, nullable=True)
-    password_salt = Column(LargeBinary, nullable=True)
+    password_hash = Column(LargeBinary, nullable=False)
+    password_salt = Column(LargeBinary, nullable=False)
     is_admin = Column(Boolean, nullable=False, default=False)
     is_staff = Column(Boolean, nullable=False, default=False)
 
