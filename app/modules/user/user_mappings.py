@@ -23,7 +23,7 @@ def user_create_to_user(user_create: UserCreateRequest) -> User:
 
     result = User(
         username=user_create.username,
-        phone_number=user_create.phone_number,
+        email=user_create.email,
         first_name=user_create.first_name,
         last_name=user_create.last_name,
         password_hash=password_hash,

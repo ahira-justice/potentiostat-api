@@ -22,7 +22,7 @@ class UserAdminStatusRequest(BaseModel):
 
 class UserCreateRequest(BaseModel):
     username: str
-    phone_number: Optional[str]
+    email: Optional[EmailStr]
     first_name: Optional[str]
     last_name: Optional[str]
     password: str
