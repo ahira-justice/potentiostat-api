@@ -2,7 +2,8 @@ from typing import Optional
 
 from pydantic import BaseModel, EmailStr, validator
 
-from app.modules.user import user_validator
+from app.common import validators
+from app.modules.user import user_validators
 
 
 class UserResponse(BaseModel):
@@ -30,7 +31,7 @@ class UserCreateRequest(BaseModel):
     @validator("username")
     def username_is_not_null(cls, username):
 
-        if not user_validator.is_not_null(username):
+        if not validators.is_not_null(username):
             raise ValueError("User username cannot be null")
 
         return username
@@ -38,7 +39,7 @@ class UserCreateRequest(BaseModel):
     @validator("username")
     def username_is_unique(cls, username):
 
-        if not user_validator.email_is_unique(username):
+        if not user_validators.email_is_unique(username):
             raise ValueError(f"User with username: '{username}' already registered")
 
         return username
@@ -46,7 +47,7 @@ class UserCreateRequest(BaseModel):
     @validator("password")
     def password_is_not_null(cls, password):
 
-        if not user_validator.is_not_null(password):
+        if not validators.is_not_null(password):
             raise ValueError("User password cannot be null")
 
         return password

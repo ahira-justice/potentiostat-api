@@ -1,11 +1,11 @@
-from typing import Dict
+from typing import Dict, Optional
 
 from pydantic import BaseModel
 
 
 class ErrorResponse(BaseModel):
     code: str
-    message: str
+    message: Optional[str]
 
 
 class ValidationErrorResponse(ErrorResponse):

@@ -5,7 +5,7 @@ from app.common.data.dtos import ErrorResponse, ValidationErrorResponse
 from app.common.domain.constants import AUTH_URL
 from app.common.domain.database import get_db
 from app.modules.auth import auth_service
-from app.modules.auth.auth_dtos import AccessTokenResponse, ExternalLoginRequest, ResetPasswordRequest, \
+from app.modules.auth.auth_dtos import AccessTokenResponse, ClientLoginRequest, ResetPasswordRequest, \
     ForgotPasswordRequest, LoginRequest
 from app.modules.user.user_dtos import UserResponse
 
@@ -24,28 +24,28 @@ controller = APIRouter(
         422: {"model": ValidationErrorResponse}
     }
 )
-async def get_access_token(
+async def get_access_token_for_user(
         login_data: LoginRequest,
         db: Session = Depends(get_db)
 ):
-    """Generate access token for valid credentials"""
-    return auth_service.get_access_token(db, login_data)
+    """Generate access token for valid user credentials"""
+    return auth_service.get_access_token_for_user(db, login_data)
 
 
 @controller.post(
-    path="/external-login",
+    path="/client-login",
     status_code=200,
     responses={
         200: {"model": AccessTokenResponse},
         422: {"model": ValidationErrorResponse}
     }
 )
-async def get_access_token_for_external_login(
-        external_login_data: ExternalLoginRequest,
+async def get_access_token_for_client(
+        request: ClientLoginRequest,
         db: Session = Depends(get_db)
 ):
-    """Generate access token for valid credentials for social login"""
-    return auth_service.get_access_token_for_external_login(db, external_login_data)
+    """Generate access token for valid client credentials"""
+    return auth_service.get_access_token_for_client(db, request)
 
 
 @controller.post(

@@ -8,8 +8,6 @@ from app.common.data.models import User
 from app.common.exceptions.app_exceptions import BadRequestException, ForbiddenException, NotFoundException
 from app.common.pagination import paginate, page_to_page_response, PageResponse
 from app.modules.auth import auth_service
-from app.modules.auth.auth_dtos import ExternalLoginRequest
-from app.modules.auth.auth_mappings import external_login_to_user
 from app.modules.user.user_dtos import UserCreateRequest, UserResponse, UserAdminStatusRequest, UserUpdateRequest
 from app.modules.user.user_mappings import user_create_to_user, user_to_user_response
 from app.modules.user.user_queries import SearchUsersQuery
@@ -23,14 +21,6 @@ def create_user(db: Session, user_data: UserCreateRequest) -> UserResponse:
     db.refresh(user)
 
     return user_to_user_response(user)
-
-
-def create_social_user(db: Session, external_login_data: ExternalLoginRequest):
-    user = external_login_to_user(external_login_data)
-
-    db.add(user)
-    db.commit()
-    db.refresh(user)
 
 
 def seed_user(db: Session, username: str, first_name: str, last_name: str, password: str) -> UserResponse:
@@ -58,10 +48,10 @@ def set_super_admin(db: Session, id: int):
 
 def change_admin_status(db: Session, id: int, user_admin_status: UserAdminStatusRequest,
                         request: Request) -> UserResponse:
-    current_user = get_current_user(db, request)
+    logged_in_user = get_logged_in_user(db, request)
 
-    if not current_user.is_staff:
-        raise ForbiddenException(current_user.email)
+    if not logged_in_user.is_staff:
+        raise ForbiddenException(logged_in_user.username)
 
     user = get_user_by_id(db, id)
 
@@ -79,7 +69,7 @@ def change_admin_status(db: Session, id: int, user_admin_status: UserAdminStatus
 
 
 def update_user(db: Session, id: int, request: Request, user_data: UserUpdateRequest) -> UserResponse:
-    username = get_username_from_token(db, request)
+    logged_in_user = get_logged_in_user(db, request)
 
     password_hash, password_salt = utils.generate_hash_and_salt(user_data.password)
 
@@ -88,8 +78,8 @@ def update_user(db: Session, id: int, request: Request, user_data: UserUpdateReq
     if user.is_staff:
         raise BadRequestException("Cannot modify super admin user")
 
-    if user.username != username:
-        raise ForbiddenException(username)
+    if user.username != logged_in_user.username:
+        raise ForbiddenException(logged_in_user.username)
 
     user_data_username = user_data.email if user_data.email else user_data.phone_number
 
@@ -111,10 +101,10 @@ def update_user(db: Session, id: int, request: Request, user_data: UserUpdateReq
 
 
 def search_users(db: Session, request: Request, query: SearchUsersQuery) -> PageResponse:
-    current_user = get_current_user(db, request)
+    logged_in_user = get_logged_in_user(db, request)
 
-    if not current_user.is_admin:
-        raise ForbiddenException(current_user.username)
+    if not logged_in_user.is_admin:
+        raise ForbiddenException(logged_in_user.username)
 
     db_query = filter_users(db, query)
 
@@ -142,20 +132,36 @@ def filter_users(db: Session, query: SearchUsersQuery) -> Query:
 
 
 def get_user(db: Session, id: int, request: Request) -> UserResponse:
-    current_user = get_current_user(db, request)
+    logged_in_user = get_logged_in_user(db, request)
     user = get_user_by_id(db, id)
 
-    if not current_user.is_admin and current_user.username != user.username:
-        raise ForbiddenException(current_user.email)
+    if not logged_in_user.is_admin and logged_in_user.username != user.username:
+        raise ForbiddenException(logged_in_user.username)
 
     return user_to_user_response(user)
 
 
-def get_current_user(db: Session, request: Request) -> UserResponse:
+def get_current_user_details(db: Session, request: Request) -> UserResponse:
+    user = get_current_user(db, request)
+    return user_to_user_response(user)
+
+
+def get_logged_in_user(db: Session, request: Request) -> User:
+    try:
+        return get_current_user(db, request)
+    except NotFoundException:
+        raise ForbiddenException()
+
+
+def get_current_user(db: Session, request: Request) -> User:
     username = get_username_from_token(db, request)
-    user = get_user_by_username(db, username)
+    return get_user_by_username(db, username)
 
-    return user_to_user_response(user)
+
+def get_username_from_token(db: Session, request: Request) -> EmailStr:
+    token = request.headers.get("Authorization").split(" ")[1]
+    payload = auth_service.decode_jwt(db, token)
+    return payload.get("sub")
 
 
 def get_user_by_username(db: Session, username: str) -> User:
@@ -174,9 +180,3 @@ def get_user_by_id(db: Session, id: int) -> User:
         raise NotFoundException(message=f"User with id: {id} does not exist")
 
     return user
-
-
-def get_username_from_token(db: Session, request: Request) -> EmailStr:
-    token = request.headers.get("Authorization").split(" ")[1]
-    payload = auth_service.decode_jwt(db, token)
-    return payload.get("sub")

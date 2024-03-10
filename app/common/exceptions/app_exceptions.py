@@ -2,7 +2,7 @@ from pydantic import BaseModel
 
 
 class AppDomainException(Exception):
-    def __init__(self, status_code: int, code: str, message: str):
+    def __init__(self, status_code: int, code: str, message: str = None):
         self.status_code = status_code
         self.code = code
         self.message = message
@@ -22,12 +22,13 @@ class ForbiddenException(AppDomainException):
     def __init__(self, username: str = None):
         status_code = 403
         code = "Forbidden"
-        message = "Unauthorized: user is not allowed to access or change this resource"
 
         if username:
             message = f"Unauthorized: {username} is not allowed to access or change this resource"
+            super().__init__(status_code, code, message)
+            return
 
-        super().__init__(status_code, code, message)
+        super().__init__(status_code, code)
 
 
 class NotFoundException(AppDomainException):

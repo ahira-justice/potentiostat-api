@@ -5,6 +5,7 @@ from loguru import logger
 from starlette import status
 from starlette.responses import JSONResponse
 
+from app.common.data.dtos import ErrorResponse
 from app.common.exceptions.app_exceptions import AppDomainException, SystemErrorException
 
 
@@ -25,12 +26,14 @@ async def validation_exception_handler(request: Request, ex: RequestValidationEr
 
 
 async def app_exception_handler(request: Request, ex: AppDomainException) -> JSONResponse:
+    response_body = {"code": ex.code}
+
+    if ex.message:
+        response_body["message"] = ex.message
+
     return JSONResponse(
         status_code=ex.status_code,
-        content={
-            "code": ex.code,
-            "message": ex.message,
-        },
+        content=response_body
     )
 
 
@@ -38,8 +41,6 @@ async def exception_handler(request: Request, ex: Exception) -> JSONResponse:
     logger.error(ex)
 
     ex = SystemErrorException()
-
-    logger.info(f"Response Status Code: {ex.status_code}")
 
     return JSONResponse(
         status_code=ex.status_code,

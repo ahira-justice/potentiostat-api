@@ -47,7 +47,7 @@ async def search_users(
         query: SearchUsersQuery = Depends(),
         db: Session = Depends(get_db)
 ):
-    """Get users"""
+    """Search users"""
     return user_service.search_users(db, request, query)
 
 
@@ -61,12 +61,12 @@ async def search_users(
         422: {"model": ValidationErrorResponse}
     }
 )
-async def get_current_user(
+async def get_current_user_details(
         request: Request,
         db: Session = Depends(get_db)
 ):
-    """Get current user"""
-    return user_service.get_current_user(db, request)
+    """Get current user details"""
+    return user_service.get_current_user_details(db, request)
 
 
 @controller.get(

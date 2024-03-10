@@ -8,12 +8,14 @@ from sqlalchemy.orm.session import Session
 
 from app.common import utils
 from app.common.data.enums import UserTokenType
+from app.common.data.models import User, Client
 from app.common.domain.config import USER_TOKEN_RESET_PASSWORD_EXPIRE_MINUTES, USER_TOKEN_RESET_PASSWORD_LENGTH, \
     ACCESS_TOKEN_EXPIRE_MINUTES, JWT_SIGNING_ALGORITHM, SECRET_KEY
 from app.common.domain.constants import FORGOT_PASSWORD_TEMPLATE
 from app.common.exceptions.app_exceptions import UnauthorizedRequestException, NotFoundException
 from app.modules.auth.auth_dtos import ForgotPasswordRequest, PasswordDto, ResetPasswordRequest, LoginRequest, \
-    AccessTokenResponse, ExternalLoginRequest
+    AccessTokenResponse, ClientLoginRequest, ClientSecretDto
+from app.modules.client import client_service
 from app.modules.email import email_service
 from app.modules.user import user_service
 from app.modules.user.user_dtos import UserResponse
@@ -27,6 +29,17 @@ def get_user_password(db: Session, username: str) -> PasswordDto:
     response = PasswordDto(
         password_hash=user.password_hash,
         password_salt=user.password_salt
+    )
+
+    return response
+
+
+def get_client_secret(db: Session, client_id: str) -> ClientSecretDto:
+    client = client_service.get_client_by_identifier(db, client_id)
+
+    response = ClientSecretDto(
+        secret_hash=client.secret_hash,
+        secret_salt=client.secret_salt
     )
 
     return response
@@ -51,6 +64,18 @@ def authenticate_user(db: Session, username: str, password: str) -> bool:
         return False
 
     if not verify_password(password, user_password.password_hash, user_password.password_salt):
+        return False
+
+    return True
+
+
+def authenticate_client(db: Session, client_id: str, secret: str) -> bool:
+    client_secret = get_client_secret(db, client_id)
+
+    if not client_secret:
+        return False
+
+    if not verify_password(secret, client_secret.secret_hash, client_secret.secret_salt):
         return False
 
     return True
@@ -91,7 +116,7 @@ def reset_password(db: Session, reset_password_data: ResetPasswordRequest) -> Us
     return user_to_user_response(user)
 
 
-def get_access_token(db: Session, login_data: LoginRequest) -> AccessTokenResponse:
+def get_access_token_for_user(db: Session, login_data: LoginRequest) -> AccessTokenResponse:
     if not authenticate_user(db, login_data.username, login_data.password):
         raise UnauthorizedRequestException("Incorrect username or password")
 
@@ -101,17 +126,13 @@ def get_access_token(db: Session, login_data: LoginRequest) -> AccessTokenRespon
     return generate_access_token(data)
 
 
-def get_access_token_for_external_login(db: Session, external_login_data: ExternalLoginRequest) -> AccessTokenResponse:
-    username = external_login_data.email if external_login_data.email else external_login_data.phone_number
+def get_access_token_for_client(db: Session, request: ClientLoginRequest) -> AccessTokenResponse:
+    if not authenticate_client(db, request.client_id, request.client_secret):
+        raise UnauthorizedRequestException("Incorrect client identifier or secret")
 
-    try:
-        user_service.get_user_by_username(db, username)
-    except NotFoundException:
-        user_service.create_social_user(db, external_login_data)
+    expire = get_expiry(request.expires)
 
-    expire = get_expiry(external_login_data.expires)
-
-    data = {"sub": username, "exp": expire}
+    data = {"client_id": request.client_id, "exp": expire}
     return generate_access_token(data)
 
 
@@ -122,11 +143,15 @@ def decode_jwt(db: Session, token: str) -> dict:
         return {}
 
     username = decoded_token.get("sub")
-    if not username:
+    client_id = decoded_token.get("client_id")
+
+    if not username and not client_id:
         return {}
 
-    user = user_service.get_user_by_username(db, username)
-    if not user:
+    user = db.query(User).filter(User.username == username).first()
+    client = db.query(Client).filter(Client.identifier == client_id).first()
+
+    if not user and not client:
         return {}
 
     expiry = decoded_token.get("exp")

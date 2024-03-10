@@ -38,3 +38,11 @@ class UserToken(BaseEntity):
     expiry = Column(BigInteger, nullable=False)
     user_id = Column(Integer, ForeignKey("users.id"))
     user = relationship("User")
+
+
+class Client(BaseEntity):
+    __tablename__ = "clients"
+
+    identifier = Column(String, unique=True, nullable=False, index=True)
+    secret_hash = Column(LargeBinary, nullable=False)
+    secret_salt = Column(LargeBinary, nullable=False)
