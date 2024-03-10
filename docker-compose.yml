@@ -1,0 +1,14 @@
+version: "3.4"
+
+services:
+  potentiostatapi:
+    container_name: potentiostatapi
+    image: ${DOCKER_REGISTRY-}potentiostatapi:latest
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    env_file:
+      - .dockerenv
+    ports:
+      - "32820:80"
+      - "32821:443"
