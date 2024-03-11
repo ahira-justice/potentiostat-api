@@ -96,3 +96,46 @@ async def get_experiment_measurements(
 ):
     """Get experiment measurements by id"""
     return experiment_service.get_experiment_measurements(db, id, request)
+
+
+@controller.get(
+    path="/{id}/start",
+    dependencies=[Depends(BearerAuth())],
+    status_code=204,
+    responses={
+        204: {},
+        401: {"model": ErrorResponse},
+        403: {"model": ErrorResponse},
+        404: {"model": ErrorResponse},
+        422: {"model": ValidationErrorResponse}
+    }
+)
+async def start_experiment(
+        id: int,
+        request: Request,
+        db: Session = Depends(get_db)
+):
+    """Start experiment"""
+    experiment_service.start_experiment(db, id, request)
+
+
+@controller.get(
+    path="/{id}/stop",
+    dependencies=[Depends(BearerAuth())],
+    status_code=204,
+    responses={
+        204: {},
+        401: {"model": ErrorResponse},
+        403: {"model": ErrorResponse},
+        404: {"model": ErrorResponse},
+        422: {"model": ValidationErrorResponse}
+    }
+)
+async def stop_experiment(
+        id: int,
+        request: Request,
+        db: Session = Depends(get_db)
+):
+    """Stop experiment"""
+    experiment_service.stop_experiment(db, id, request)
+

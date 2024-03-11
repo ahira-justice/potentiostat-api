@@ -117,3 +117,40 @@ def get_experiment_by_id(db: Session, id: int) -> Experiment:
         raise NotFoundException(message=f"Experiment with id: {id} does not exist")
 
     return experiment
+
+
+def start_experiment(db, id, request) -> None:
+    logged_in_client = client_service.get_logged_in_client(db, request)
+    experiment = get_experiment_by_id(db, id)
+
+    validate_experiment_belongs_to_logged_in_client(logged_in_client, experiment)
+    validate_experiment_is_initiated(experiment)
+
+    experiment.experiment_status = ExperimentStatus.RUNNING.name
+    save_experiment(db, experiment)
+
+
+def validate_experiment_belongs_to_logged_in_client(logged_in_client: Client, experiment: Experiment) -> None:
+    if logged_in_client.id != experiment.client_id:
+        raise ForbiddenException(logged_in_client.identifier)
+
+
+def validate_experiment_is_initiated(experiment: Experiment) -> None:
+    if experiment.experiment_status != ExperimentStatus.INITIATED.name:
+        raise BadRequestException(f"Cannot start {experiment.experiment_status} experiment")
+
+
+def stop_experiment(db, id, request) -> None:
+    logged_in_client = client_service.get_logged_in_client(db, request)
+    experiment = get_experiment_by_id(db, id)
+
+    validate_experiment_belongs_to_logged_in_client(logged_in_client, experiment)
+    validate_experiment_is_running(experiment)
+
+    experiment.experiment_status = ExperimentStatus.COMPLETED.name
+    save_experiment(db, experiment)
+
+
+def validate_experiment_is_running(experiment: Experiment) -> None:
+    if experiment.experiment_status != ExperimentStatus.RUNNING.name:
+        raise BadRequestException(f"Cannot stop {experiment.experiment_status} experiment")
