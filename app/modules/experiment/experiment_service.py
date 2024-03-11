@@ -23,11 +23,7 @@ def create_experiment(db: Session, request: Request, experiment_data: Experiment
 
     validate_experiment_creation_request(db, client)
 
-    experiment = build_experiment(logged_in_user, client)
-
-    db.add(experiment)
-    db.commit()
-    db.refresh(experiment)
+    experiment = persist_experiment(db, logged_in_user, client)
 
     return experiment_to_experiment_response(experiment)
 
@@ -46,12 +42,25 @@ def get_unfinished_experiment_for_client(db: Session, client: Client) -> Experim
                                        Experiment.client_id == client.id).first()
 
 
+def persist_experiment(db: Session, logged_in_user: User, client: Client) -> Experiment:
+    experiment = build_experiment(logged_in_user, client)
+    return save_experiment(db, experiment)
+
+
 def build_experiment(logged_in_user: User, client: Client) -> Experiment:
     return Experiment(
         experiment_status=ExperimentStatus.INITIATED.name,
         user_id=logged_in_user.id,
         client_id=client.id
     )
+
+
+def save_experiment(db: Session, experiment: Experiment) -> Experiment:
+    db.add(experiment)
+    db.commit()
+    db.refresh(experiment)
+
+    return experiment
 
 
 def search_experiments(db: Session, request: Request, query: SearchExperimentsQuery) -> PageResponse:
@@ -85,7 +94,7 @@ def get_experiment(db: Session, id: int, request: Request) -> ExperimentResponse
     logged_in_user = user_service.get_logged_in_user(db, request)
     experiment = get_experiment_by_id(db, id)
 
-    if not logged_in_user.is_admin and not logged_in_user.id != experiment.user.id:
+    if not logged_in_user.is_admin and logged_in_user.id != experiment.user_id:
         raise ForbiddenException(logged_in_user.username)
 
     return experiment_to_experiment_response(experiment)
@@ -95,7 +104,7 @@ def get_experiment_measurements(db: Session, id: int, request: Request) -> List[
     logged_in_user = user_service.get_logged_in_user(db, request)
     experiment = get_experiment_by_id(db, id)
 
-    if not logged_in_user.is_admin and not logged_in_user.id != experiment.user.id:
+    if not logged_in_user.is_admin and logged_in_user.id != experiment.user_id:
         raise ForbiddenException(logged_in_user.username)
 
     return measurement_service.get_measurements(db, experiment.id)
