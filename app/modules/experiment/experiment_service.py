@@ -1,0 +1,96 @@
+from fastapi import Request
+from sqlalchemy.orm import Query
+from sqlalchemy.orm.session import Session
+
+from app.common.data.enums import ExperimentStatus
+from app.common.data.models import Experiment, User, Client
+from app.common.exceptions.app_exceptions import ForbiddenException, NotFoundException, BadRequestException
+from app.common.pagination import paginate, page_to_page_response, PageResponse
+from app.modules.client import client_service
+from app.modules.experiment.experiment_dtos import ExperimentCreateRequest, ExperimentResponse
+from app.modules.experiment.experiment_mappings import experiment_to_experiment_response
+from app.modules.experiment.experiment_queries import SearchExperimentsQuery
+from app.modules.user import user_service
+
+
+def create_experiment(db: Session, request: Request, experiment_data: ExperimentCreateRequest) -> ExperimentResponse:
+    logged_in_user = user_service.get_logged_in_user(db, request)
+    client = client_service.get_client_by_identifier(db, experiment_data.client_id)
+
+    validate_experiment_creation_request(db, client)
+
+    experiment = build_experiment(logged_in_user, client)
+
+    db.add(experiment)
+    db.commit()
+    db.refresh(experiment)
+
+    return experiment_to_experiment_response(experiment)
+
+
+def validate_experiment_creation_request(db: Session, client: Client):
+    unfinished_experiment = get_unfinished_experiment_for_client(db, client)
+
+    if unfinished_experiment is not None:
+        raise BadRequestException(
+            f"An experiment in the {unfinished_experiment.experiment_status} state already exists for this client"
+        )
+
+
+def get_unfinished_experiment_for_client(db: Session, client: Client) -> Experiment:
+    return db.query(Experiment).filter(Experiment.experiment_status != ExperimentStatus.COMPLETED.name,
+                                       Experiment.client_id == client.id).first()
+
+
+def build_experiment(logged_in_user: User, client: Client) -> Experiment:
+    return Experiment(
+        experiment_status=ExperimentStatus.INITIATED.name,
+        user_id=logged_in_user.id,
+        client_id=client.id
+    )
+
+
+def search_experiments(db: Session, request: Request, query: SearchExperimentsQuery) -> PageResponse:
+    logged_in_user = user_service.get_logged_in_user(db, request)
+
+    db_query = filter_experiments(db, query, logged_in_user)
+
+    page = paginate(db_query, query.page, query.size)
+    page.content = list(map(experiment_to_experiment_response, page.content))
+
+    return page_to_page_response(page)
+
+
+def filter_experiments(db: Session, query: SearchExperimentsQuery, logged_in_user: User) -> Query:
+    db_query = db.query(Experiment)
+
+    if query.experiment_status is not None:
+        db_query = db_query.filter(Experiment.experiment_status == query.experiment_status)
+    if query.username is not None:
+        db_query = db_query.join(User).filter(User.username.contains(query.username))
+    if query.client_id is not None:
+        db_query = db_query.join(Client).filter(Client.identifier.contains(query.client_id))
+
+    if not logged_in_user.is_admin:
+        db_query = db_query.filter(Experiment.user_id == logged_in_user.id)
+
+    return db_query
+
+
+def get_experiment(db: Session, id: int, request: Request) -> ExperimentResponse:
+    logged_in_user = user_service.get_logged_in_user(db, request)
+    experiment = get_experiment_by_id(db, id)
+
+    if not logged_in_user.is_admin and not logged_in_user.id != experiment.user.id:
+        raise ForbiddenException(logged_in_user.username)
+
+    return experiment_to_experiment_response(experiment)
+
+
+def get_experiment_by_id(db: Session, id: int) -> Experiment:
+    experiment = db.query(Experiment).filter(Experiment.id == id).first()
+
+    if not experiment:
+        raise NotFoundException(message=f"Experiment with id: {id} does not exist")
+
+    return experiment

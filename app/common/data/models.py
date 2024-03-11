@@ -46,3 +46,13 @@ class Client(BaseEntity):
     identifier = Column(String, unique=True, nullable=False, index=True)
     secret_hash = Column(LargeBinary, nullable=False)
     secret_salt = Column(LargeBinary, nullable=False)
+
+
+class Experiment(BaseEntity):
+    __tablename__ = "experiments"
+
+    experiment_status = Column(String, nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    user = relationship("User")
+    client_id = Column(Integer, ForeignKey("clients.id"))
+    client = relationship("Client")
