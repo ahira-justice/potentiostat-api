@@ -44,8 +44,8 @@ def search_clients(db: Session, request: Request, query: SearchClientsQuery) -> 
 def filter_clients(db: Session, query: SearchClientsQuery) -> Query:
     db_query = db.query(Client)
 
-    if query.name is not None:
-        db_query = db_query.filter(Client.name.contains(query.name))
+    if query.identifier is not None:
+        db_query = db_query.filter(Client.identifier.contains(query.identifier))
 
     return db_query
 
