@@ -15,6 +15,7 @@ from app.common.middleware.handlers import http_logging_middleware
 from app.modules.auth.auth_controller import controller as auth_controller
 from app.modules.client.client_controller import controller as client_controller
 from app.modules.experiment.experiment_controller import controller as experiment_controller
+from app.modules.measurement.measurement_controller import controller as measurement_controller
 from app.modules.user.user_controller import controller as user_controller
 from app.modules.user_token.user_token_controller import controller as user_token_controller
 
@@ -70,6 +71,7 @@ async def custom_http_logging_middleware(request: Request, call_next):
 app.include_router(auth_controller)
 app.include_router(client_controller)
 app.include_router(experiment_controller)
+app.include_router(measurement_controller)
 app.include_router(user_controller)
 app.include_router(user_token_controller)
 

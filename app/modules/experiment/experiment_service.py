@@ -1,3 +1,5 @@
+from typing import List
+
 from fastapi import Request
 from sqlalchemy.orm import Query
 from sqlalchemy.orm.session import Session
@@ -10,6 +12,8 @@ from app.modules.client import client_service
 from app.modules.experiment.experiment_dtos import ExperimentCreateRequest, ExperimentResponse
 from app.modules.experiment.experiment_mappings import experiment_to_experiment_response
 from app.modules.experiment.experiment_queries import SearchExperimentsQuery
+from app.modules.measurement import measurement_service
+from app.modules.measurement.measurement_dtos import MeasurementResponse
 from app.modules.user import user_service
 
 
@@ -85,6 +89,16 @@ def get_experiment(db: Session, id: int, request: Request) -> ExperimentResponse
         raise ForbiddenException(logged_in_user.username)
 
     return experiment_to_experiment_response(experiment)
+
+
+def get_experiment_measurements(db: Session, id: int, request: Request) -> List[MeasurementResponse]:
+    logged_in_user = user_service.get_logged_in_user(db, request)
+    experiment = get_experiment_by_id(db, id)
+
+    if not logged_in_user.is_admin and not logged_in_user.id != experiment.user.id:
+        raise ForbiddenException(logged_in_user.username)
+
+    return measurement_service.get_measurements(db, experiment.id)
 
 
 def get_experiment_by_id(db: Session, id: int) -> Experiment:

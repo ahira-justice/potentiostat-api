@@ -56,3 +56,13 @@ class Experiment(BaseEntity):
     user = relationship("User")
     client_id = Column(Integer, ForeignKey("clients.id"))
     client = relationship("Client")
+
+
+class Measurement(BaseEntity):
+    __tablename__ = "measurements"
+
+    timestamp = Column(BigInteger, nullable=False)
+    voltage = Column(DECIMAL(9, 4), nullable=False)
+    current = Column(DECIMAL(9, 4), nullable=False)
+    experiment_id = Column(Integer, ForeignKey("experiments.id"))
+    experiment = relationship("Experiment")
