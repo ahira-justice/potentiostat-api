@@ -58,7 +58,10 @@ def verify_password(password, password_hash, password_salt) -> bool:
 
 
 def authenticate_user(db: Session, username: str, password: str) -> bool:
-    user_password = get_user_password(db, username)
+    try:
+        user_password = get_user_password(db, username)
+    except NotFoundException:
+        return False
 
     if not user_password:
         return False
@@ -70,7 +73,10 @@ def authenticate_user(db: Session, username: str, password: str) -> bool:
 
 
 def authenticate_client(db: Session, client_id: str, secret: str) -> bool:
-    client_secret = get_client_secret(db, client_id)
+    try:
+        client_secret = get_client_secret(db, client_id)
+    except NotFoundException:
+        return False
 
     if not client_secret:
         return False
