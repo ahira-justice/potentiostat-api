@@ -7,6 +7,7 @@ from app.common.domain.constants import TEST_DATABASE_URL
 load_dotenv()
 
 ENVIRONMENT = os.environ.get("ENVIRONMENT")
+ABLY_API_KEY = os.environ.get("ABLY_API_KEY")
 SQLALCHEMY_DATABASE_URL = os.environ.get("SQLALCHEMY_DATABASE_URL")
 SECRET_KEY = os.environ.get("SECRET_KEY")
 JWT_SIGNING_ALGORITHM = os.environ.get("JWT_SIGNING_ALGORITHM")

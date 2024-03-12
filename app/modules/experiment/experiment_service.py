@@ -4,9 +4,11 @@ from fastapi import Request
 from sqlalchemy.orm import Query
 from sqlalchemy.orm.session import Session
 
+from app.common import notifications
 from app.common.data.enums import ExperimentStatus
 from app.common.data.models import Experiment, User, Client
 from app.common.exceptions.app_exceptions import ForbiddenException, NotFoundException, BadRequestException
+from app.common.models import Notification
 from app.common.pagination import paginate, page_to_page_response, PageResponse
 from app.modules.client import client_service
 from app.modules.experiment.experiment_dtos import ExperimentCreateRequest, ExperimentResponse
@@ -17,15 +19,18 @@ from app.modules.measurement.measurement_dtos import MeasurementResponse
 from app.modules.user import user_service
 
 
-def create_experiment(db: Session, request: Request, experiment_data: ExperimentCreateRequest) -> ExperimentResponse:
+async def create_experiment(db: Session, request: Request, experiment_data: ExperimentCreateRequest) -> ExperimentResponse:
     logged_in_user = user_service.get_logged_in_user(db, request)
     client = client_service.get_client_by_identifier(db, experiment_data.client_id)
 
     validate_experiment_creation_request(db, client)
 
     experiment = persist_experiment(db, logged_in_user, client)
+    response = experiment_to_experiment_response(experiment)
 
-    return experiment_to_experiment_response(experiment)
+    await notify_client(client, response)
+
+    return response
 
 
 def validate_experiment_creation_request(db: Session, client: Client):
@@ -61,6 +66,15 @@ def save_experiment(db: Session, experiment: Experiment) -> Experiment:
     db.refresh(experiment)
 
     return experiment
+
+
+async def notify_client(client: Client, experiment: ExperimentResponse) -> None:
+    notification = build_notification(experiment)
+    await notifications.notify(client.identifier, notification)
+
+
+def build_notification(experiment) -> Notification:
+    return Notification(event="experiment.created", payload=experiment)
 
 
 def search_experiments(db: Session, request: Request, query: SearchExperimentsQuery) -> PageResponse:

@@ -34,7 +34,7 @@ async def create_experiment(
         db: Session = Depends(get_db)
 ):
     """Create new experiment"""
-    return experiment_service.create_experiment(db, request, experiment_data)
+    return await experiment_service.create_experiment(db, request, experiment_data)
 
 
 @controller.get(

@@ -55,6 +55,13 @@ class SystemErrorException(AppDomainException):
         super().__init__(status_code, code, message)
 
 
+class UpstreamServerException(AppDomainException):
+    def __init__(self, message: str):
+        status_code = 502
+        code = "BadGateway"
+        super().__init__(status_code, code, message)
+
+
 class UnauthorizedRequestException(AppDomainException):
     def __init__(self, message: str):
         status_code = 401
