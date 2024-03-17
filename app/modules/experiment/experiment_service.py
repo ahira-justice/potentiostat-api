@@ -155,14 +155,19 @@ def validate_experiment_is_initiated(experiment: Experiment) -> None:
 
 
 def stop_experiment(db, id, request) -> None:
-    logged_in_client = client_service.get_logged_in_client(db, request)
+    logged_in_user = user_service.get_logged_in_user(db, request)
     experiment = get_experiment_by_id(db, id)
 
-    validate_experiment_belongs_to_logged_in_client(logged_in_client, experiment)
+    validate_experiment_belongs_to_logged_in_user(logged_in_user, experiment)
     validate_experiment_is_running(experiment)
 
     experiment.experiment_status = ExperimentStatus.COMPLETED.name
     save_experiment(db, experiment)
+
+
+def validate_experiment_belongs_to_logged_in_user(logged_in_user: User, experiment: Experiment) -> None:
+    if logged_in_user.id != experiment.user_id:
+        raise ForbiddenException(logged_in_user.username)
 
 
 def validate_experiment_is_running(experiment: Experiment) -> None:
