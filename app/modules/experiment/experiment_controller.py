@@ -98,7 +98,7 @@ async def get_experiment_measurements(
     return experiment_service.get_experiment_measurements(db, id, request)
 
 
-@controller.get(
+@controller.put(
     path="/{id}/start",
     dependencies=[Depends(BearerAuth())],
     status_code=204,
@@ -119,7 +119,7 @@ async def start_experiment(
     experiment_service.start_experiment(db, id, request)
 
 
-@controller.get(
+@controller.put(
     path="/{id}/stop",
     dependencies=[Depends(BearerAuth())],
     status_code=204,
