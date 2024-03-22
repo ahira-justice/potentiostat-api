@@ -1,21 +1,20 @@
 from typing import Optional
 
-from pydantic import BaseModel, EmailStr, validator, root_validator
+from pydantic import BaseModel
 
-from app.common.domain.config import ACCESS_TOKEN_EXPIRE_MINUTES
-from app.modules.user import user_validators
+from app.common.domain.config import ACCESS_TOKEN_EXPIRE_IN_SECONDS
 
 
 class LoginRequest(BaseModel):
     username: str
     password: str
-    expires: Optional[int] = ACCESS_TOKEN_EXPIRE_MINUTES
+    expires: Optional[int] = ACCESS_TOKEN_EXPIRE_IN_SECONDS
 
 
 class ClientLoginRequest(BaseModel):
     client_id: str
     client_secret: str
-    expires: Optional[int] = ACCESS_TOKEN_EXPIRE_MINUTES
+    expires: Optional[int] = ACCESS_TOKEN_EXPIRE_IN_SECONDS
 
 
 class ForgotPasswordRequest(BaseModel):
@@ -41,3 +40,4 @@ class ClientSecretDto(BaseModel):
 class AccessTokenResponse(BaseModel):
     access_token: str
     token_type: str
+    expires_in: int
