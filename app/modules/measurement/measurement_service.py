@@ -4,7 +4,7 @@ from fastapi import Request
 from sqlalchemy.orm.session import Session
 
 from app.common.data.enums import ExperimentStatus
-from app.common.data.models import Measurement, Experiment
+from app.common.data.models import Measurement, Experiment, Client
 from app.common.exceptions.app_exceptions import ForbiddenException, BadRequestException
 from app.modules.client import client_service
 from app.modules.experiment import experiment_service
@@ -24,12 +24,12 @@ def create_measurement(db: Session, request: Request, measurement_data: Measurem
     return measurement_to_measurement_response(measurement)
 
 
-def validate_experiment_belongs_to_logged_in_client(logged_in_client, experiment):
+def validate_experiment_belongs_to_logged_in_client(logged_in_client: Client, experiment: Experiment) -> None:
     if logged_in_client.id != experiment.client_id:
         raise ForbiddenException(logged_in_client.identifier)
 
 
-def validate_experiment_is_running(experiment):
+def validate_experiment_is_running(experiment: Experiment) -> None:
     if experiment.experiment_status != ExperimentStatus.RUNNING.name:
         raise BadRequestException(f"Cannot post measurements for {experiment.experiment_status} experiment")
 

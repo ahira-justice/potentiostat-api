@@ -25,7 +25,7 @@ async def create_experiment(db: Session, request: Request, experiment_data: Expe
 
     validate_experiment_creation_request(db, client)
 
-    experiment = persist_experiment(db, logged_in_user, client)
+    experiment = persist_experiment(db, logged_in_user, client, experiment_data)
     response = experiment_to_experiment_response(experiment)
 
     await notify_client(client, response)
@@ -47,14 +47,17 @@ def get_unfinished_experiment_for_client(db: Session, client: Client) -> Experim
                                        Experiment.client_id == client.id).first()
 
 
-def persist_experiment(db: Session, logged_in_user: User, client: Client) -> Experiment:
-    experiment = build_experiment(logged_in_user, client)
+def persist_experiment(db: Session, logged_in_user: User, client: Client, request: ExperimentCreateRequest) -> Experiment:
+    experiment = build_experiment(logged_in_user, client, request)
     return save_experiment(db, experiment)
 
 
-def build_experiment(logged_in_user: User, client: Client) -> Experiment:
+def build_experiment(logged_in_user: User, client: Client, request: ExperimentCreateRequest) -> Experiment:
     return Experiment(
         experiment_status=ExperimentStatus.INITIATED.name,
+        start_voltage=request.start_voltage,
+        end_voltage=request.end_voltage,
+        scan_rate=request.scan_rate,
         user_id=logged_in_user.id,
         client_id=client.id
     )
@@ -73,7 +76,7 @@ async def notify_client(client: Client, experiment: ExperimentResponse) -> None:
     await notifications.notify(client.identifier, notification)
 
 
-def build_notification(experiment) -> Notification:
+def build_notification(experiment: ExperimentResponse) -> Notification:
     return Notification(event="experiment.created", payload=experiment)
 
 

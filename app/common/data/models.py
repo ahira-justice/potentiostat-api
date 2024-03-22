@@ -52,6 +52,9 @@ class Experiment(BaseEntity):
     __tablename__ = "experiments"
 
     experiment_status = Column(String, nullable=False)
+    start_voltage = Column(DECIMAL(9, 4), nullable=False)
+    end_voltage = Column(DECIMAL(9, 4), nullable=False)
+    scan_rate = Column(DECIMAL(9, 4), nullable=False)
     user_id = Column(Integer, ForeignKey("users.id"))
     user = relationship("User")
     client_id = Column(Integer, ForeignKey("clients.id"))
