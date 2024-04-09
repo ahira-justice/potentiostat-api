@@ -8,7 +8,7 @@ def experiment_to_experiment_response(experiment: Experiment) -> ExperimentRespo
         experiment_status=experiment.experiment_status,
         start_voltage=experiment.start_voltage,
         end_voltage=experiment.end_voltage,
-        scan_rate=experiment.scan_rate,
+        voltage_step=experiment.voltage_step,
         username=experiment.user.username,
         client_id=experiment.client.identifier
     )

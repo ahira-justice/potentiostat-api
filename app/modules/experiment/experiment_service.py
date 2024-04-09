@@ -57,7 +57,7 @@ def build_experiment(logged_in_user: User, client: Client, request: ExperimentCr
         experiment_status=ExperimentStatus.INITIATED.name,
         start_voltage=request.start_voltage,
         end_voltage=request.end_voltage,
-        scan_rate=request.scan_rate,
+        voltage_step=request.voltage_step,
         user_id=logged_in_user.id,
         client_id=client.id
     )

@@ -23,8 +23,8 @@ def upgrade():
                     sa.Column('updated_on', sa.DateTime(), nullable=True),
                     sa.Column('is_deleted', sa.Boolean(), nullable=False),
                     sa.Column('timestamp', sa.BigInteger(), nullable=False),
-                    sa.Column('voltage', sa.DECIMAL(precision=9, scale=4), nullable=False),
-                    sa.Column('current', sa.DECIMAL(precision=9, scale=4), nullable=False),
+                    sa.Column('voltage', sa.DECIMAL(precision=9, scale=7), nullable=False),
+                    sa.Column('current', sa.DECIMAL(precision=9, scale=7), nullable=False),
                     sa.Column('experiment_id', sa.Integer(), nullable=True),
                     sa.ForeignKeyConstraint(['experiment_id'], ['experiments.id'], ),
                     sa.PrimaryKeyConstraint('id')

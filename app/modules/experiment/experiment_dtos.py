@@ -8,13 +8,13 @@ class ExperimentResponse(BaseModel):
     experiment_status: str
     start_voltage: Decimal
     end_voltage: Decimal
-    scan_rate: Decimal
+    voltage_step: Decimal
     username: str
     client_id: str
 
 
 class ExperimentCreateRequest(BaseModel):
     client_id: str
-    start_voltage: Decimal = Field(decimal_places=4)
-    end_voltage: Decimal = Field(decimal_places=4)
-    scan_rate: Decimal = Field(decimal_places=4)
+    start_voltage: Decimal = Field(decimal_places=7)
+    end_voltage: Decimal = Field(decimal_places=7)
+    voltage_step: Decimal = Field(decimal_places=7)

@@ -52,9 +52,9 @@ class Experiment(BaseEntity):
     __tablename__ = "experiments"
 
     experiment_status = Column(String, nullable=False)
-    start_voltage = Column(DECIMAL(9, 4), nullable=False)
-    end_voltage = Column(DECIMAL(9, 4), nullable=False)
-    scan_rate = Column(DECIMAL(9, 4), nullable=False)
+    start_voltage = Column(DECIMAL(9, 7), nullable=False)
+    end_voltage = Column(DECIMAL(9, 7), nullable=False)
+    voltage_step = Column(DECIMAL(9, 7), nullable=False)
     user_id = Column(Integer, ForeignKey("users.id"))
     user = relationship("User")
     client_id = Column(Integer, ForeignKey("clients.id"))
@@ -65,7 +65,7 @@ class Measurement(BaseEntity):
     __tablename__ = "measurements"
 
     timestamp = Column(BigInteger, nullable=False)
-    voltage = Column(DECIMAL(9, 4), nullable=False)
-    current = Column(DECIMAL(9, 4), nullable=False)
+    voltage = Column(DECIMAL(9, 7), nullable=False)
+    current = Column(DECIMAL(9, 7), nullable=False)
     experiment_id = Column(Integer, ForeignKey("experiments.id"))
     experiment = relationship("Experiment")
