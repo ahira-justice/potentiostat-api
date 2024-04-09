@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Union, Optional
 
 from fastapi import Request
 from sqlalchemy.orm import Query
@@ -158,19 +158,41 @@ def validate_experiment_is_initiated(experiment: Experiment) -> None:
 
 
 def stop_experiment(db, id, request) -> None:
-    logged_in_user = user_service.get_logged_in_user(db, request)
+    logged_in_user = get_logged_in_user(db, request)
+    logged_in_client = get_logged_in_client(db, request)
+
+    if not logged_in_user and not logged_in_client:
+        raise ForbiddenException()
+
     experiment = get_experiment_by_id(db, id)
 
-    validate_experiment_belongs_to_logged_in_user(logged_in_user, experiment)
+    validate_experiment_belongs_to_logged_in_user_or_client(logged_in_user, logged_in_client, experiment)
     validate_experiment_is_running(experiment)
 
     experiment.experiment_status = ExperimentStatus.COMPLETED.name
     save_experiment(db, experiment)
 
 
-def validate_experiment_belongs_to_logged_in_user(logged_in_user: User, experiment: Experiment) -> None:
-    if logged_in_user.id != experiment.user_id:
+def get_logged_in_user(db: Session, request: Request) -> Optional[User]:
+    try:
+        return user_service.get_logged_in_user(db, request)
+    except ForbiddenException:
+        return None
+
+
+def get_logged_in_client(db: Session, request: Request) -> Optional[Client]:
+    try:
+        return client_service.get_logged_in_client(db, request)
+    except ForbiddenException:
+        return None
+
+
+def validate_experiment_belongs_to_logged_in_user_or_client(logged_in_user: User, logged_in_client: Client, experiment: Experiment) -> None:
+    if logged_in_user and logged_in_user.id != experiment.user_id:
         raise ForbiddenException(logged_in_user.username)
+
+    if logged_in_client and logged_in_client.id != experiment.client_id:
+        raise ForbiddenException(logged_in_client.identifier)
 
 
 def validate_experiment_is_running(experiment: Experiment) -> None:
