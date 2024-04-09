@@ -167,7 +167,7 @@ def stop_experiment(db, id, request) -> None:
     experiment = get_experiment_by_id(db, id)
 
     validate_experiment_belongs_to_logged_in_user_or_client(logged_in_user, logged_in_client, experiment)
-    validate_experiment_is_running(experiment)
+    validate_experiment_is_not_completed(experiment)
 
     experiment.experiment_status = ExperimentStatus.COMPLETED.name
     save_experiment(db, experiment)
@@ -195,6 +195,6 @@ def validate_experiment_belongs_to_logged_in_user_or_client(logged_in_user: User
         raise ForbiddenException(logged_in_client.identifier)
 
 
-def validate_experiment_is_running(experiment: Experiment) -> None:
-    if experiment.experiment_status != ExperimentStatus.RUNNING.name:
-        raise BadRequestException(f"Cannot stop {experiment.experiment_status} experiment")
+def validate_experiment_is_not_completed(experiment: Experiment) -> None:
+    if experiment.experiment_status == ExperimentStatus.COMPLETED.name:
+        raise BadRequestException("Experiment is already completed")
