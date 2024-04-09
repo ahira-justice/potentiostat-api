@@ -14,5 +14,5 @@ class MeasurementResponse(BaseModel):
 class MeasurementCreateRequest(BaseModel):
     experiment_id: int
     timestamp: int
-    voltage: Decimal = Field(decimal_places=4)
-    current: Decimal = Field(decimal_places=4)
+    voltage: Decimal
+    current: Decimal
