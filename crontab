@@ -1,0 +1,4 @@
+# To host the api on the embedded device, add the contents of this file to crontab.
+# Run "sudo crontab -e" to access the crontab config.
+
+@reboot sh ~/potentiostat-api/startup.sh >~/potentiostat-api-cronlog 2>&1
