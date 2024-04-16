@@ -7,7 +7,8 @@ from sqlalchemy.orm.session import Session
 from app.common import notifications
 from app.common.data.enums import ExperimentStatus
 from app.common.data.models import Experiment, User, Client
-from app.common.exceptions.app_exceptions import ForbiddenException, NotFoundException, BadRequestException
+from app.common.exceptions.app_exceptions import ForbiddenException, NotFoundException, BadRequestException, \
+    UpstreamServerException
 from app.common.models import Notification
 from app.common.pagination import paginate, page_to_page_response, PageResponse
 from app.modules.client import client_service
@@ -28,7 +29,12 @@ async def create_experiment(db: Session, request: Request, experiment_data: Expe
     experiment = persist_experiment(db, logged_in_user, client, experiment_data)
     response = experiment_to_experiment_response(experiment)
 
-    await notify_client(client, response)
+    try:
+        await notify_client(client, response)
+    except UpstreamServerException as ex:
+        db.delete(experiment)
+        db.commit()
+        raise ex
 
     return response
 
